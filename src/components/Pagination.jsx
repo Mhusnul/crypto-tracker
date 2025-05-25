@@ -1,23 +1,20 @@
-// src/components/Pagination.jsx
-function Pagination({ page, setPage }) {
+export default function Pagination({ page, setPage }) {
   return (
-    <div className="flex justify-center mt-6 gap-4">
+    <div className="flex justify-center mt-8 gap-4">
       <button
-        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+        onClick={() => setPage((p) => Math.max(p - 1, 1))}
         disabled={page === 1}
-        className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+        className="px-4 py-2 rounded bg-[#334155] hover:bg-[#475569] disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
-        ⬅ Prev
+        Prev
       </button>
-      <span className="flex items-center font-semibold">Page {page}</span>
+      <span className="text-gray-400 self-center">Page {page}</span>
       <button
-        onClick={() => setPage((prev) => prev + 1)}
-        className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        onClick={() => setPage((p) => p + 1)}
+        className="px-4 py-2 rounded bg-[#334155] hover:bg-[#475569] transition"
       >
-        Next ➡
+        Next
       </button>
     </div>
   );
 }
-
-export default Pagination;
