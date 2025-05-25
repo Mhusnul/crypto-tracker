@@ -2,7 +2,7 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
-import CoinDetail from "./pages/coinDetail";
+import CoinDetail from "./pages/CoinDetail";
 
 function App() {
   return (
