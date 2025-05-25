@@ -19,7 +19,7 @@ A modern cryptocurrency tracking web application built using **React**, **Vite**
 
 ## 📸 Preview
 
-![Preview Screenshot](![alt text](image.png))
+![alt text](image.png)
 
 ---
 
