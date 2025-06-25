@@ -1,49 +1,25 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import axios from "axios";
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend
-);
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useParams, useNavigate } from "react-router-dom";
+import { getCoinDetail } from "../api/coinGecko";
+import { ArrowLeft } from "lucide-react";
 
 function CoinDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [coin, setCoin] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [chartData, setChartData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCoin = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get(
-          `https://api.coingecko.com/api/v3/coins/${id}`
-        );
-        setCoin(res.data);
-
-        const chartRes = await axios.get(
-          `https://api.coingecko.com/api/v3/coins/${id}/market_chart`,
-          {
-            params: { vs_currency: "usd", days: 7 },
-          }
-        );
-        setChartData(chartRes.data.prices);
+        const data = await getCoinDetail(id);
+        setCoin(data);
+        setError(null);
       } catch (err) {
-        console.error(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -51,98 +27,114 @@ function CoinDetail() {
     fetchCoin();
   }, [id]);
 
-  if (loading)
+  if (loading) {
     return (
-      <p className="text-center text-gray-400 mt-12 text-lg">
-        Loading detail...
-      </p>
+      <div className="flex justify-center items-center h-64">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full"
+        />
+      </div>
     );
-  if (!coin)
+  }
+
+  if (error) {
+    return <div className="text-center text-red-400 py-8">Error: {error}</div>;
+  }
+
+  if (!coin) {
     return (
-      <p className="text-center text-red-500 mt-12 text-lg">Coin not found</p>
+      <div className="text-center text-gray-400 py-8">No data available</div>
     );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-[#1e293b] rounded-lg shadow-lg text-gray-200 font-sans">
-      <div className="flex items-center gap-6 mb-6">
-        <img src={coin.image.large} alt={coin.name} className="w-20 h-20" />
-        <div>
-          <h1 className="text-4xl font-extrabold mb-1">{coin.name}</h1>
-          <p className="uppercase text-cyan-400 font-semibold text-lg">
-            {coin.symbol}
-          </p>
-          <p className="text-2xl mt-2 font-semibold">
-            ${coin.market_data.current_price.usd.toLocaleString()}
-          </p>
-          <p
-            className={`mt-1 font-semibold ${
-              coin.market_data.price_change_percentage_24h >= 0
-                ? "text-green-400"
-                : "text-red-500"
-            }`}
-          >
-            24h: {coin.market_data.price_change_percentage_24h.toFixed(2)}%
-          </p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8"
+    >
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => navigate("/")}
+        className="flex items-center space-x-2 text-gray-300 hover:text-orange-400"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        <span>Back to Market</span>
+      </motion.button>
+
+      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
+        <div className="flex items-center space-x-4 mb-6">
+          <img
+            src={coin.image?.large}
+            alt={coin.name}
+            className="w-12 h-12 rounded-full"
+          />
+          <div>
+            <h2 className="text-2xl font-bold text-white">{coin.name}</h2>
+            <p className="text-gray-400 uppercase">{coin.symbol}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Market Data
+            </h3>
+            <div className="space-y-2 text-gray-300">
+              <p>
+                <span className="font-medium">Price:</span> $
+                {coin.market_data?.current_price?.usd?.toLocaleString()}
+              </p>
+              <p>
+                <span className="font-medium">Market Cap:</span> $
+                {(coin.market_data?.market_cap?.usd / 1e9).toFixed(1)}B
+              </p>
+              <p>
+                <span className="font-medium">24h Change:</span>{" "}
+                <span
+                  className={
+                    coin.market_data?.price_change_percentage_24h >= 0
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }
+                >
+                  {coin.market_data?.price_change_percentage_24h?.toFixed(2)}%
+                </span>
+              </p>
+              <p>
+                <span className="font-medium">Rank:</span> #
+                {coin.market_cap_rank}
+              </p>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Details</h3>
+            <div className="space-y-2 text-gray-300">
+              <p>
+                <span className="font-medium">Website:</span>{" "}
+                <a
+                  href={coin.links?.homepage[0]}
+                  target="_blank"
+                  rel="noopener"
+                  className="text-orange-400 hover:underline"
+                >
+                  {coin.links?.homepage[0]}
+                </a>
+              </p>
+              <p>
+                <span className="font-medium">Description:</span>{" "}
+                {coin.description?.en
+                  ? coin.description.en.substring(0, 200) + "..."
+                  : "N/A"}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-
-      <section className="prose prose-invert max-w-none mb-10 leading-relaxed text-gray-300">
-        <div
-          dangerouslySetInnerHTML={{
-            __html: coin.description.en.split(". ")[0] + ".",
-          }}
-        />
-      </section>
-
-      {chartData && (
-        <section>
-          <h2 className="text-2xl font-semibold mb-4 text-white">
-            Price Last 7 Days
-          </h2>
-          <div className="bg-[#0f172a] p-4 rounded-md shadow-inner">
-            <Line
-              data={{
-                labels: chartData.map((item) =>
-                  new Date(item[0]).toLocaleDateString()
-                ),
-                datasets: [
-                  {
-                    label: `${coin.name} Price (USD)`,
-                    data: chartData.map((item) => item[1]),
-                    borderColor: "rgb(14, 165, 233)", // cyan-500
-                    backgroundColor: "rgba(14, 165, 233, 0.3)",
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 0,
-                    borderWidth: 2,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { labels: { color: "#60a5fa" } }, // text-cyan-400
-                  tooltip: { mode: "index", intersect: false },
-                },
-                scales: {
-                  x: {
-                    ticks: { color: "#94a3b8" }, // text-slate-400
-                    grid: { color: "#334155" }, // slate-700
-                  },
-                  y: {
-                    ticks: {
-                      color: "#94a3b8",
-                      callback: (value) => `$${value}`,
-                    },
-                    grid: { color: "#334155" },
-                  },
-                },
-              }}
-            />
-          </div>
-        </section>
-      )}
-    </div>
+    </motion.div>
   );
 }
 
